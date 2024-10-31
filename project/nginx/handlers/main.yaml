@@ -1,0 +1,21 @@
+# nginx/handlers/main.yml
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+  become: true
+
+- name: start apache
+  service:
+    name: apache2
+    state: started
+  become: true
+
+- name: stop apache
+  service:
+    name: apache2
+    state: stopped
+  become: true
+
+

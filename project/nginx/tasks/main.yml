@@ -1,0 +1,71 @@
+# nginx/tasks/main.yml
+---
+- name: Show the date of the execution
+  command: date
+  register: date_output
+
+- name: Display the date
+  debug:
+    var: date_output.stdout
+
+- name: Write the execution date to a file
+  become: true                     # Use become if root privileges are needed
+  copy:
+    content: "Execution Date: {{ date_output.stdout }}"
+    dest: /tmp/execution_date.txt
+
+- name: Ping the VMs to validate the access
+  ping:
+
+- name: Install net-tools
+  become: true
+  apt:
+    name: net-tools
+    #state: present
+
+- name: Install htop
+  become: true
+  apt:
+    name: htop
+    #state: present
+
+- name: Check if Nginx is installed
+  command: "dpkg -l | grep nginx"
+  register: nginx_check
+  ignore_errors: yes
+
+- name: Debug Nginx status
+  debug:
+    var: nginx_check.stdout_lines
+
+- name: Collecting facts
+  service_facts:
+
+- name: Stop NGINX if running
+  become: true
+  service:
+    name: nginx
+    state: stopped
+  when: "'nginx' in ansible_facts.services and ansible_facts.services['nginx'].state == 'running'"
+  #when: ansible_facts.services['nginx'].state == "running"
+
+- name: Install Apache service
+  become: true
+  apt:
+    name: apache2
+    state: present
+  notify: start apache
+
+- name: Check if APACHE is online
+  wait_for:
+    port: 80
+    delay: 10  # Wait for 10 seconds before starting the check
+    timeout: 30  # Timeout after 30 seconds if MySQL is not online
+  register: http_status
+
+- name: Print APACHE status
+  debug:
+    msg: "APACHE is online!"
+  #when: mysql_status.elapsed < mysql_status.timeout
+  #when: mysql_status is defined and mysql_status.elapsed < mysql_timeout  # Check if the condition is safe
+  when: http_status is defined and http_status.elapsed < 30  # Check if the condition is safe

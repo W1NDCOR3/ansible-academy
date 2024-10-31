@@ -1,0 +1,7 @@
+# site.yml
+
+- name: Setup and configure NGINX
+  hosts: all
+  become: true
+  roles:
+    - nginx
